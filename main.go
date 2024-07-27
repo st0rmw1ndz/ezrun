@@ -55,8 +55,7 @@ func getConfigFilePath(input string) (string, error) {
 		configDirectory = filepath.Join(homeDir, ".config")
 	}
 
-	configFilePath := filepath.Join(configDirectory, "ezrun", input)
-	return configFilePath, nil
+	return filepath.Join(configDirectory, "ezrun", input), nil
 }
 
 func chooseProgram(choiceCommand string, programs []Program) (Program, error) {
@@ -67,7 +66,6 @@ func chooseProgram(choiceCommand string, programs []Program) (Program, error) {
 
 	cmdArgs, err := shlex.Split(choiceCommand)
 	if err != nil {
-		fmt.Printf("error splitting choice command: %v\n", err)
 		return Program{}, err
 	}
 	var out bytes.Buffer
@@ -75,8 +73,9 @@ func chooseProgram(choiceCommand string, programs []Program) (Program, error) {
 	cmd := exec.Command(cmdArgs[0], cmdArgs[1:]...)
 	cmd.Stdin = strings.NewReader(programNames)
 	cmd.Stdout = &out
+	cmd.Stderr = os.Stderr
+
 	if err := cmd.Run(); err != nil {
-		fmt.Printf("error running choice command: %v\n", err)
 		return Program{}, err
 	}
 
@@ -89,25 +88,27 @@ func chooseProgram(choiceCommand string, programs []Program) (Program, error) {
 	return Program{}, nil
 }
 
-func runSelectedProgram(program Program) {
+func runSelectedProgram(program Program) error {
 	cmdArgs, err := shlex.Split(program.Command)
 	if err != nil {
-		fmt.Printf("error splitting selected program command: %v\n", err)
-		return
+		return err
 	}
 
-	cmd := exec.Command(cmdArgs[0], cmdArgs[1:]...)
 	env := os.Environ()
 	for key, value := range program.Env {
 		env = append(env, fmt.Sprintf("%s=%s", key, value))
 	}
+
+	cmd := exec.Command(cmdArgs[0], cmdArgs[1:]...)
 	cmd.Env = env
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
+
 	if err := cmd.Run(); err != nil {
-		fmt.Printf("error running selected command: %v\n", err)
-		return
+		return err
 	}
+
+	return nil
 }
 
 func main() {
@@ -117,22 +118,20 @@ func main() {
 	configFilePath, err := getConfigFilePath(configFilePath)
 	if err != nil {
 		fmt.Printf("error parsing config file path: %v\n", err)
-		return
+		os.Exit(1)
 	}
 
 	var config Config
 	if _, err := toml.DecodeFile(configFilePath, &config); err != nil {
 		fmt.Printf("error parsing config file: %v\n", err)
-		return
+		os.Exit(1)
 	}
 
 	selectedProgram, err := chooseProgram(config.ChoiceCommand, config.Programs)
 	if err != nil {
 		fmt.Printf("error choosing program: %v\n", err)
-		return
+		os.Exit(1)
 	}
-	fmt.Printf("%s\n", selectedProgram)
-
 	selectedProgram.Command = strings.ReplaceAll(selectedProgram.Command, "~/", "$HOME/")
 	selectedProgram.Command = os.ExpandEnv(selectedProgram.Command)
 
