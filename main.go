@@ -1,3 +1,5 @@
+// See LICENSE file for copyright and license details.
+
 package main
 
 import (
@@ -12,21 +14,25 @@ import (
 	"strings"
 )
 
+// Represents the command-line flags for the program.
 type Flags struct {
 	ConfigFile string
 }
 
+// Represents a program that can be run.
 type Program struct {
 	Name    string            `toml:"name"`
 	Command string            `toml:"command"`
 	Env     map[string]string `toml:"env"`
 }
 
+// Represents the configuration file for the program.
 type Config struct {
 	ChoiceCommand string    `toml:"choice_command"`
 	Programs      []Program `toml:"programs"`
 }
 
+// Parses the command-line flags and returns a struct containing their values.
 func parseFlags() Flags {
 	var flags Flags
 	flag.StringVar(&flags.ConfigFile, "c", "config.toml", "configuration file")
@@ -36,6 +42,8 @@ func parseFlags() Flags {
 	return flags
 }
 
+// Determines the configuration file path, resolving absolute paths first, then
+// relative ones, then file names (searching in $XDG_CONFIG_HOME/ezrun).
 func getConfigFilePath(input string) (string, error) {
 	if filepath.IsAbs(input) {
 		return input, nil
@@ -58,6 +66,17 @@ func getConfigFilePath(input string) (string, error) {
 	return filepath.Join(configDirectory, "ezrun", input), nil
 }
 
+// Replaces tildes with $HOME, and expands environment variables on a string.
+func shellLikeExpand(input string) string {
+	input = strings.ReplaceAll(input, "~/", "$HOME/")
+	if input == "~" {
+		input = "$HOME"
+	}
+	input = os.ExpandEnv(input)
+	return input
+}
+
+// Runs the choice program and returns the chosen program struct.
 func chooseProgram(choiceCommand string, programs []Program) (Program, error) {
 	var programNames string
 	for _, program := range programs {
@@ -88,7 +107,8 @@ func chooseProgram(choiceCommand string, programs []Program) (Program, error) {
 	return Program{}, nil
 }
 
-func runSelectedProgram(program Program) error {
+// Runs a program struct, supporting environment variables as well.
+func runProgram(program Program) error {
 	cmdArgs, err := shlex.Split(program.Command)
 	if err != nil {
 		return err
@@ -96,7 +116,7 @@ func runSelectedProgram(program Program) error {
 
 	env := os.Environ()
 	for key, value := range program.Env {
-		env = append(env, fmt.Sprintf("%s=%s", key, value))
+		env = append(env, fmt.Sprintf("%s=%s", key, shellLikeExpand(value)))
 	}
 
 	cmd := exec.Command(cmdArgs[0], cmdArgs[1:]...)
@@ -132,8 +152,7 @@ func main() {
 		fmt.Printf("error choosing program: %v\n", err)
 		os.Exit(1)
 	}
-	selectedProgram.Command = strings.ReplaceAll(selectedProgram.Command, "~/", "$HOME/")
-	selectedProgram.Command = os.ExpandEnv(selectedProgram.Command)
+	selectedProgram.Command = shellLikeExpand(selectedProgram.Command)
 
-	runSelectedProgram(selectedProgram)
+	runProgram(selectedProgram)
 }
