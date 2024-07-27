@@ -154,5 +154,8 @@ func main() {
 	}
 	selectedProgram.Command = shellLikeExpand(selectedProgram.Command)
 
-	runProgram(selectedProgram)
+	if err = runProgram(selectedProgram); err != nil {
+		fmt.Printf("error running selected program: %v\n", err)
+		os.Exit(1)
+	}
 }
