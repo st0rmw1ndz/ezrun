@@ -24,6 +24,9 @@ XDG_CONFIG_HOME="${XDG_CONFIG_HOME:-$HOME/.config}"
 # shellcheck disable=SC1091
 [ -f "$HOME/.ezrunrc" ] && . "$HOME/.ezrunrc"
 
+# TODO(frosty): Switch `compgen' for a purely POSIX-compliant way of listing functions.
+FUNCTIONS=$(compgen -A function)
+
 CHOICE_COMMAND="${CHOICE_COMMAND:-dmenu}"
 REPLACEMENTS="${REPLACEMENTS:-}"
 
@@ -39,7 +42,6 @@ else
     print_func() { printf '%s\n' "$1"; }
 fi
 
-# TODO(frosty): Switch `compgen' for a purely POSIX-compliant way of listing functions.
-eval "$(compgen -A function | while read -r func; do
+eval "$(printf '%s' "$FUNCTIONS" | while read -r func; do
     [ "${func#_}" = "$func" ] && print_func "$func"
 done | $CHOICE_COMMAND "$@")" &
