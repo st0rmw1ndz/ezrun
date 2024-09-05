@@ -17,7 +17,7 @@
 
 set -eu
 
-XDG_CONFIG_HOME="${XDG_CONFIG_HOME:-$HOME/.config}"
+XDG_CONFIG_HOME=${XDG_CONFIG_HOME:-$HOME/.config}
 
 # shellcheck disable=SC1091
 [ -f "$XDG_CONFIG_HOME/ezrun/ezrunrc" ] && . "$XDG_CONFIG_HOME/ezrun/ezrunrc"
@@ -27,8 +27,8 @@ XDG_CONFIG_HOME="${XDG_CONFIG_HOME:-$HOME/.config}"
 # TODO(frosty): Switch `compgen' for a purely POSIX-compliant way of listing functions.
 FUNCTIONS=$(compgen -A function)
 
-CHOICE_COMMAND="${CHOICE_COMMAND:-dmenu}"
-REPLACEMENTS="${REPLACEMENTS:-}"
+CHOICE_COMMAND=${CHOICE_COMMAND:-dmenu}
+REPLACEMENTS=${REPLACEMENTS:-}
 
 if [ -n "$REPLACEMENTS" ]; then
     REPLACE_ARGUMENTS=
