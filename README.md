@@ -4,19 +4,33 @@ ezrun sits in between a stdin-based menu system like dmenu, and allows you to ea
 
 ## Example Configuration
 
+The following is an ezrun configuration with the accompanying output.
+
 ```sh
 #!/bin/sh
 
 # shellcheck disable=SC2034
 CHOICE_COMMAND="dmenu -l 4 -g 8"
+REPLACEMENTS="_:-
+0: "
 
-st() { command st; }
 nvim() { command st -e nvim; }
-pavucontrol() { command pavucontrol; }
 signal() { signal-desktop; }
 firefox() { command firefox; }
-flycast() { flatpak run org.flycast.Flycast; }
+obs_studio() { obs-studio; }
 steam() { flatpak run com.valvesoftware.Steam; }
+prism0launcher() { flatpak run org.prismlauncher.PrismLauncher; }
 ```
 
-*$XDG_CONFIG_HOME/ezrun/ezrunrc*
+*Contents of `$XDG_CONFIG_HOME/ezrun/ezrunrc`.*
+
+```
+nvim
+signal
+firefox
+obs-studio
+steam
+prism launcher
+```
+
+*ezrun output.*
