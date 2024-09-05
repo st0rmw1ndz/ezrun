@@ -31,4 +31,4 @@ cmd=$(typeset -F | while read -r _ _ func; do
     [ "${func#_}" = "$func" ] && printf '%s\n' "$func"
 done | $CHOICE_COMMAND)
 
-command -v "$cmd" >/dev/null && "$cmd" &
+"$cmd" &
