@@ -25,10 +25,21 @@ XDG_CONFIG_HOME="${XDG_CONFIG_HOME:-$HOME/.config}"
 [ -f "$HOME/.ezrunrc" ] && . "$HOME/.ezrunrc"
 
 CHOICE_COMMAND="${CHOICE_COMMAND:-dmenu}"
+REPLACEMENTS="${REPLACEMENTS:-}"
 
-# TODO(frosty): Implement this in a purely POSIX-compliant way.
-cmd=$(typeset -F | while read -r _ _ func; do
-    [ "${func#_}" = "$func" ] && printf '%s\n' "$func"
-done | $CHOICE_COMMAND)
+if [ -n "$REPLACEMENTS" ]; then
+    REPLACE_ARGUMENTS=
+    while IFS=':' read -r search replace; do
+        REPLACE_ARGUMENTS="${REPLACE_ARGUMENTS} -e 's/${search}/${replace}/g'"
+    done <<EOF
+$REPLACEMENTS
+EOF
+    print_func() { printf '%s\n' "$1" | eval sed "$REPLACE_ARGUMENTS"; }
+else
+    print_func() { printf '%s\n' "$1"; }
+fi
 
-"$cmd" &
+# TODO(frosty): Switch `compgen' for a purely POSIX-compliant way of listing functions.
+eval "$(compgen -A function | while read -r func; do
+    [ "${func#_}" = "$func" ] && print_func "$func"
+done | $CHOICE_COMMAND "$@")" &
